@@ -11,7 +11,10 @@ use crate::{
     utils::texture::{Texture, TextureBuilder},
 };
 
-use super::unlit_diffuse_sub_renderer::UnlitDiffuseSubRenderer;
+use super::{
+    nbody_sim_dispatch::NBodySimDispatcher, nbody_sim_renderer::NBodySimRenderer,
+    unlit_diffuse_sub_renderer::UnlitDiffuseSubRenderer,
+};
 
 type RootRendererSystemState = SystemState<(
     Res<'static, RenderResources>,
@@ -21,7 +24,9 @@ type RootRendererSystemState = SystemState<(
 pub struct RootRenderer {
     system_state: RootRendererSystemState,
 
+    nbody_sim_dispatcher: NBodySimDispatcher,
     unlit_diffuse_sub_renderer: UnlitDiffuseSubRenderer,
+    nbody_sim_renderer: NBodySimRenderer,
 
     depth_texture: Texture,
 }
@@ -37,12 +42,17 @@ impl RootRenderer {
         let unlit_diffuse_sub_renderer = UnlitDiffuseSubRenderer::new(world);
         let system_state: RootRendererSystemState = SystemState::new(world);
 
+        let nbody_sim_dispatcher = NBodySimDispatcher::new(world);
+        let nbody_sim_renderer = NBodySimRenderer::new(world);
+
         let render_resources = world.get_resource::<RenderResources>().unwrap();
         let device = &render_resources.device;
 
         let mut renderer = Self {
             system_state,
+            nbody_sim_dispatcher,
             unlit_diffuse_sub_renderer,
+            nbody_sim_renderer,
             depth_texture: TextureBuilder::new(device)
                 .size(width, height)
                 .depth_texture()
@@ -76,6 +86,18 @@ impl RootRenderer {
             label: Some("Render Encoder"),
         });
 
+        // compute passes
+        {
+            let pass_descriptor = wgpu::ComputePassDescriptor {
+                label: Some("NBodySim Compute Pass"),
+                timestamp_writes: None,
+            };
+
+            let mut compute_pass = encoder.begin_compute_pass(&pass_descriptor);
+            self.nbody_sim_dispatcher.dispatch(world, &mut compute_pass);
+        }
+
+        // render passes
         {
             let pass_descriptor = wgpu::RenderPassDescriptor {
                 label: Some("Background Pass"),
@@ -101,8 +123,10 @@ impl RootRenderer {
             let mut render_pass = encoder.begin_render_pass(&pass_descriptor);
             render_pass.set_bind_group(0, &main_camera.bind_group, &[]);
 
-            self.unlit_diffuse_sub_renderer
-                .render(world, &mut render_pass);
+            // self.unlit_diffuse_sub_renderer
+            //     .render(world, &mut render_pass);
+
+            self.nbody_sim_renderer.render(world, &mut render_pass);
         }
 
         encoder.finish()

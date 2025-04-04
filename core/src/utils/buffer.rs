@@ -26,6 +26,8 @@ pub struct BufferBuilder<'a, T: Pod + Zeroable = u8> {
     queue: Option<&'a wgpu::Queue>,
     /// The data to initialize the buffer with
     contents: Option<&'a [T]>,
+    /// The data to initialize the buffer with
+    raw_contents: Option<&'a [u8]>,
     /// The size of the buffer in elements (used if contents is None)
     size: Option<usize>,
     /// The usage flags for the buffer
@@ -43,6 +45,7 @@ impl<'a, T: Pod + Zeroable> BufferBuilder<'a, T> {
             device,
             queue: None,
             contents: None,
+            raw_contents: None,
             size: None,
             usage: wgpu::BufferUsages::empty(),
             label: "buffer".to_string(),
@@ -59,6 +62,12 @@ impl<'a, T: Pod + Zeroable> BufferBuilder<'a, T> {
     /// Sets the contents to initialize the buffer with
     pub fn contents(mut self, contents: &'a [T]) -> Self {
         self.contents = Some(contents);
+        self
+    }
+
+    /// Sets the contents to initialize the buffer with
+    pub fn raw_contents(mut self, raw_contents: &'a [u8]) -> Self {
+        self.raw_contents = Some(raw_contents);
         self
     }
 
@@ -113,6 +122,13 @@ impl<'a, T: Pod + Zeroable> BufferBuilder<'a, T> {
                 .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some(&self.label),
                     contents: bytemuck::cast_slice(data),
+                    usage: self.usage,
+                })
+        } else if let Some(raw_data) = self.raw_contents {
+            self.device
+                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some(&self.label),
+                    contents: raw_data,
                     usage: self.usage,
                 })
         } else {

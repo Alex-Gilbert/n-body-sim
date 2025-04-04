@@ -2,6 +2,7 @@ use bevy_ecs::world::World;
 
 pub mod camera_uniform_layout;
 pub mod model_uniform_layout;
+pub mod nbody_simparams_uniform_layout;
 pub mod texture_uniform_layout;
 
 pub fn initialize_bind_group_layouts(world: &mut World, device: &wgpu::Device) {
@@ -23,4 +24,6 @@ pub fn initialize_bind_group_layouts(world: &mut World, device: &wgpu::Device) {
     world.insert_resource(texture_uniform_layout::TextureUniformLayout::<4>::new(
         device,
     ));
+
+    world.insert_resource(nbody_simparams_uniform_layout::NBodySimParamsUniformLayout::new(device));
 }

@@ -12,7 +12,7 @@ all: build
 # Build the project
 .PHONY: build
 build:
-	cargo build
+	RUSTFLAGS="-C link-arg=-fuse-ld=lld" cargo build
 
 # Build with RenderDoc integration
 .PHONY: build-debug
@@ -21,6 +21,8 @@ build-debug:
 
 # Get the path to the built executable
 EXECUTABLE := target/debug/$(PROJECT_NAME)
+
+RUSTFLAGS := "-C link-arg=-fuse-ld=lld"
 
 # Run the application normally
 .PHONY: run

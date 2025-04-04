@@ -18,6 +18,7 @@ use crate::{
             apc_resources::{ApcPlatform, ApcQueue},
             http_resources::HttpPlatform,
             input::Input,
+            nbody_sim_resources::NBodySimResources,
             screen_parameters::ScreenParameters,
             time::Time,
         },
@@ -26,9 +27,11 @@ use crate::{
             update_camera_system::{update_camera_bindings, update_camera_system},
             update_input_system::update_input_system,
             update_model_bindings_system::update_model_bindings_system,
+            update_n_body_sim_system::update_n_body_sim_bindings,
         },
     },
-    gpu_resources, include_texture,
+    gpu_resources::{self, pipelines::n_body_sim_compute_pipeline},
+    include_texture,
     render::root_renderer::RootRenderer,
     traits::{apc_traits::ApcHandler, http_traits::HttpRequester},
     utils::primitives,
@@ -80,7 +83,7 @@ impl Core {
 
         let camera_bundle = CameraBundle::new(
             &world,
-            vec3(0.0, 10.0, -10.0),
+            vec3(0.0, 0.0, -10.0),
             vec3(0.0, 0.0, 0.0),
             vec3(0.0, 1.0, 0.0),
         );
@@ -91,34 +94,12 @@ impl Core {
         // spawn a cube
         let texture = include_texture!("assets/textures/handsome.jpg", &device, &queue);
 
-        let mut rng = rand::thread_rng();
-        for _ in 0..100 {
-            let mut cube_transform = Transform::from_translation(vec3(0.0, 0.0, 0.0));
-            //create random location within a 5x5x5 cube
-            cube_transform.translation.x = rng.gen_range(-5.0..5.0);
-            cube_transform.translation.y = rng.gen_range(-5.0..5.0);
-            cube_transform.translation.z = rng.gen_range(-5.0..5.0);
+        let cube_mesh_filter = primitives::create_sphere(&device, 0.25, 32, 32);
+        let cube_material = UnlitDiffuseMaterial::new(&world, &texture);
 
-            let cube_mesh_filter = primitives::create_cube(&device, rng.gen_range(0.5..1.0), 1);
-            let cube_model_bindings = ModelBindings::new(&world, &device, &mut cube_transform);
-            let cube_material = UnlitDiffuseMaterial::new(&world, &texture);
-            let cube_rotate_component = RotateComponent {
-                rotate_axis: vec3(
-                    rng.gen_range(-1.0..1.0),
-                    rng.gen_range(-1.0..1.0),
-                    rng.gen_range(-1.0..1.0),
-                ),
-                rotate_speed: rng.gen_range(0.5..3.0),
-            };
+        let n_body_sim_resources = NBodySimResources::new(&world, cube_mesh_filter, cube_material);
 
-            world.spawn((
-                cube_transform,
-                cube_mesh_filter,
-                cube_model_bindings,
-                cube_material,
-                cube_rotate_component,
-            ));
-        }
+        world.insert_resource(n_body_sim_resources);
 
         let mut early_update_schedule = Schedule::default();
         let mut update_schedule = Schedule::default();
@@ -131,6 +112,7 @@ impl Core {
 
         pre_render_schedule.add_systems(update_camera_bindings);
         pre_render_schedule.add_systems(update_model_bindings_system);
+        pre_render_schedule.add_systems(update_n_body_sim_bindings);
 
         Self {
             world,

@@ -37,3 +37,26 @@ macro_rules! include_wgsl_shader_vertex_fragment {
         );
     };
 }
+
+#[macro_export]
+macro_rules! include_wgsl_shader_compute {
+    ($shader_path:expr, $mod_name:ident) => {
+        include_wgsl_shader!(
+            $shader_path,
+            $mod_name,
+            cs_main as SHADER_DESCRIPTOR_COMPUTE
+        );
+    };
+}
+
+// Extended version that allows specifying a custom entry point name
+#[macro_export]
+macro_rules! include_wgsl_shader_compute_with_entry {
+    ($shader_path:expr, $mod_name:ident, $entry_point:ident) => {
+        include_wgsl_shader!(
+            $shader_path,
+            $mod_name,
+            $entry_point as SHADER_DESCRIPTOR_COMPUTE
+        );
+    };
+}

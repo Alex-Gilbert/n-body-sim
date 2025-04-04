@@ -6,6 +6,50 @@ use crate::{
     gpu_resources::types::basic_vertex::BasicVertex,
 };
 
+/// Creates a quad mesh on the XY plane with a specified width and height.
+///
+/// # Arguments
+/// * `device` - The WGPU device to create buffers on
+/// * `width` - The width of the quad along the X axis
+/// * `height` - The height of the quad along the Y axis
+pub fn create_quad(device: &Device, width: f32, height: f32) -> BasicMeshFilter {
+    let width_half = width / 2.0;
+    let height_half = height / 2.0;
+
+    // Create 4 vertices for the quad (one at each corner)
+    let vertices = vec![
+        // Bottom left
+        BasicVertex {
+            position: [-width_half, -height_half, 0.0].into(),
+            tex_coords: [0.0, 0.0].into(),
+        },
+        // Bottom right
+        BasicVertex {
+            position: [width_half, -height_half, 0.0].into(),
+            tex_coords: [1.0, 0.0].into(),
+        },
+        // Top left
+        BasicVertex {
+            position: [-width_half, height_half, 0.0].into(),
+            tex_coords: [0.0, 1.0].into(),
+        },
+        // Top right
+        BasicVertex {
+            position: [width_half, height_half, 0.0].into(),
+            tex_coords: [1.0, 1.0].into(),
+        },
+    ];
+
+    // Two triangles to form the quad
+    // First triangle: bottom-left, top-left, bottom-right
+    // Second triangle: bottom-right, top-left, top-right
+    let indices = vec![0, 2, 1, 1, 2, 3];
+
+    BasicMeshFilter {
+        filter: MeshFilter::new(device, &vertices, &indices),
+    }
+}
+
 /// Creates a plane mesh on the XZ plane with a specified size.
 ///
 /// # Arguments

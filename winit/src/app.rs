@@ -169,15 +169,33 @@ impl<H: DemoWinitHandler> DemoWinitApp<H> {
                 }
             }
         };
+        // Debug adapter capabilities
+        println!("Adapter name: {:?}", adapter.get_info().name);
+        println!("Adapter driver: {:?}", adapter.get_info().driver);
+        println!("Adapter driver info: {:?}", adapter.get_info().driver_info);
+        println!("Adapter features: {:?}", adapter.features());
+        println!("Adapter limits: {:?}", adapter.limits());
+
+        // Specifically check storage buffer limit
+        println!(
+            "Storage buffers per shader stage: {}",
+            adapter.limits().max_storage_buffers_per_shader_stage
+        );
+
         let (device, queue) = futures::executor::block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
-                label: None,
-                required_features: Default::default(),
+                label: Some("Device"),
+                // Request compute shader feature explicitly
+                required_features: wgpu::Features::empty(),
+                // Set appropriate limits for RTX 2070
                 required_limits: wgpu::Limits {
-                    // we need a bigger final texture for desktop.
-                    #[cfg(not(target_arch = "wasm32"))]
-                    max_texture_dimension_2d: 8192,
-                    ..wgpu::Limits::downlevel_webgl2_defaults()
+                    max_storage_buffers_per_shader_stage: 8, // RTX 2070 supports more than this
+                    max_compute_workgroup_storage_size: 16384,
+                    max_compute_invocations_per_workgroup: 1024,
+                    max_compute_workgroup_size_x: 1024,
+                    max_compute_workgroup_size_y: 1024,
+                    max_compute_workgroup_size_z: 64,
+                    ..Default::default()
                 },
             },
             None,

@@ -20,4 +20,8 @@ impl RenderResources {
             surface_format,
         }
     }
+
+    pub fn get_device_queue(&self) -> (&wgpu::Device, &wgpu::Queue) {
+        (&self.device, &self.queue)
+    }
 }
