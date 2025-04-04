@@ -80,7 +80,6 @@ fn cs_main(
         workgroupBarrier();
         
         // Process forces from particles in this tile
-        // Using the chunking approach from the reference shader
         let tile_particles = min(WORKGROUP_SIZE, params.num_particles - tile_offset);
         
         for (var i = 0u; i < tile_particles; i = i + 1u) {
